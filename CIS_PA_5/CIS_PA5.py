@@ -465,7 +465,7 @@ def initial_rigid_registration(d, root, V, Indices):
     while True:
         A_adjusted = []
         B_adjusted = []
-
+    
         for k in range(Ns):
             q_k = Q[k]
             #Compute initial sample point 
@@ -537,6 +537,7 @@ def initial_rigid_registration(d, root, V, Indices):
         n += 1
 
         #If Iterations exceed maximum, break 
+        print(f"Inner Iteration: {n}")
         if n == 250:
             break
 
@@ -780,6 +781,7 @@ def main():
     
     datasets = os.listdir(extract_path)
     # run pipeline for each dataset - SKIP DEMO FILES
+
     for fname in datasets:
         if fname.endswith("-SampleReadingsTest.txt"):
             data_prefix = fname[:-len("-SampleReadingsTest.txt")]
@@ -789,7 +791,7 @@ def main():
             process_dataset(data_prefix, extract_path)
         else:
             print(f"Skipping {fname}")
-
+    
 
 if __name__ == "__main__":
     main()
