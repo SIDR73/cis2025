@@ -555,21 +555,21 @@ def deformable_registration(d, mode0, modes, Indices, Nmodes, max_iter=50):
     """
     Ns = d.shape[0]
     
-    # Initialize mesh with mode0
+    #initialize mesh with mode0
     V = mode0.copy()
     root = make_tree_point(V)
     
-    # Initial rigid registration
-    print("Performing initial rigid registration...")
+    #initial rigid registration
+    print("initial rigid registration")
     R_reg, p_reg, s_k = initial_rigid_registration(d, root, V, Indices)
     
-    # Initialize mode weights
+    # mode weights start at 0
     lambda_vals = np.zeros(Nmodes)
     
-    print("Starting deformable registration iterations...")
+    print("Deformable registration iterations")
     
     for outer_iter in range(max_iter):
-        # Step 1: Find closest points on current deformed mesh
+        #1 - find closest points on current deformed mesh
         c_k_list = []
         q0_k_list = []
         qm_k_list = []
@@ -582,10 +582,10 @@ def deformable_registration(d, mode0, modes, Indices, Nmodes, max_iter=50):
             if c_k is None or tri_idx is None:
                 continue
             
-            # Get triangle vertex indices
+            #get triangle vertex indices
             tri_verts = Indices[tri_idx]
             
-            # Compute q vectors
+            #compute q vectors
             q0_k, qm_k = compute_q_vectors(mode0, modes, tri_verts, bary_coords, Nmodes)
             
             c_k_list.append(c_k)
@@ -594,7 +594,7 @@ def deformable_registration(d, mode0, modes, Indices, Nmodes, max_iter=50):
             valid_samples.append(k)
         
         if len(valid_samples) == 0:
-            print("Warning: No valid samples found!")
+            print("warning: no valid samples found")
             break
         
         c_k_array = np.array(c_k_list)
@@ -602,13 +602,7 @@ def deformable_registration(d, mode0, modes, Indices, Nmodes, max_iter=50):
         qm_k_array = np.array(qm_k_list)  # Shape: (N_valid, Nmodes, 3)
         s_k_valid = np.array([frame_transformation(R_reg, d[k], p_reg) for k in valid_samples])
         
-        # Step 2: Solve least squares for lambda^(t+1)
-        # Equation: s_k ≈ q_0,k + sum(lambda_m * q_m,k)
-        # Rearrange: sum(lambda_m * q_m,k) ≈ s_k - q_0,k
-        
-        # Build system: A * lambda = b
-        # A has shape (3*N_valid, Nmodes), b has shape (3*N_valid,)
-        N_valid = len(valid_samples)
+        # 2 - Solve least squares 
         A = np.zeros((3 * N_valid, Nmodes))
         b = np.zeros(3 * N_valid)
         
@@ -617,27 +611,27 @@ def deformable_registration(d, mode0, modes, Indices, Nmodes, max_iter=50):
             q0_k_vec = q0_k_array[i]
             residual = s_k_vec - q0_k_vec
             
-            # Fill A matrix: each mode contributes 3 rows
+            #fill A matrix
             for m in range(Nmodes):
                 qm_k_vec = qm_k_array[i, m]
                 A[3*i:3*(i+1), m] = qm_k_vec
             
-            # Fill b vector
+            # fill b vector
             b[3*i:3*(i+1)] = residual
         
-        # Solve least squares
+        # least squares solved
         lambda_old = lambda_vals.copy()
         lambda_new, residuals, rank, s_vals = np.linalg.lstsq(A, b, rcond=None)
         lambda_vals = lambda_new
         
-        # Step 3: Update mesh vertices
+        # 3- Update mesh vertices
         V = update_mesh_vertices(mode0, modes, lambda_vals, Nmodes)
         
         # Rebuild KD-tree
         root = make_tree_point(V)
         
-        # Step 4: Re-estimate rigid transformation
-        # Find new closest points with updated mesh
+        # 4- reestimate rigid transformation
+        #find new closest points with updated mesh
         A_points = []
         B_points = []
         
