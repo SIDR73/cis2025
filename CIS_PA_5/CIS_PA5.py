@@ -600,6 +600,7 @@ def deformable_registration(d, mode0, modes, Indices, Nmodes, max_iter=50):
         c_k_array = np.array(c_k_list)
         q0_k_array = np.array(q0_k_list)
         qm_k_array = np.array(qm_k_list)  # Shape: (N_valid, Nmodes, 3)
+        N_valid = qm_k_array.shape[0]
         s_k_valid = np.array([frame_transformation(R_reg, d[k], p_reg) for k in valid_samples])
         
         # 2 - Solve least squares 
@@ -643,16 +644,13 @@ def deformable_registration(d, mode0, modes, Indices, Nmodes, max_iter=50):
                 A_points.append(d[k])
                 B_points.append(c_k_new)
         
-        if len(A_points) < 3:
-            print("Warning: Not enough points for registration!")
-            break
         
         A_points = np.array(A_points)
         B_points = np.array(B_points)
         
         # Re-estimate rigid transformation
         R_new, p_new = point2point_3Dregistration(A_points, B_points)
-        
+
         # Check convergence
         R_change = np.linalg.norm(R_new - R_reg)
         p_change = np.linalg.norm(p_new - p_reg)
@@ -740,8 +738,6 @@ def process_dataset(data_prefix, extract_path):
         
     except Exception as e:
         print(f"  Error processing {data_prefix}: {e}")
-        import traceback
-        traceback.print_exc()
         return
 
     #Calculate d_k for each sample (pointer tip in B coordinate frame)
@@ -770,6 +766,7 @@ def process_dataset(data_prefix, extract_path):
 
 
 def main():
+
     #Get path from user 
     extract_path = input("enter dataset path:").strip()
     
@@ -782,7 +779,6 @@ def main():
         return
     
     datasets = os.listdir(extract_path)
-
     # run pipeline for each dataset - SKIP DEMO FILES
     for fname in datasets:
         if fname.endswith("-SampleReadingsTest.txt"):
@@ -793,6 +789,7 @@ def main():
             process_dataset(data_prefix, extract_path)
         else:
             print(f"Skipping {fname}")
+
 
 if __name__ == "__main__":
     main()
